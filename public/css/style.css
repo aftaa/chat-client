@@ -1,0 +1,94 @@
+#chat-header {
+    width: 300px;
+    height: 33px;
+    padding: 5px;
+    padding-left: 23px;
+    font-size: 21px;
+    line-height: 15px;
+    color: #fff;
+    cursor: pointer;
+}
+
+#chat-wrapper {
+    z-index: 999;
+    background: #22ceb6;
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    border-top-left-radius: 14px;
+    border-left: 1px solid #22ceb6;
+    box-shadow: -3px -3px 3px #ccc;
+}
+
+#chat-messages {
+    height: 300px;
+    background: #fff;
+    overflow-y: scroll;
+    width: 300px;
+    max-width: 300px;
+    font: 15px/17px Tahoma, Arial, sans-serif;
+}
+
+#chat-messages .chat-message {
+    padding: 10px;
+    margin: 5px;
+    clear: both;
+}
+
+.chat-operator {
+    background: #22ceb6;
+    color: #fff;
+    border-radius: 5px;
+    float: left;
+}
+
+.chat-client {
+    background: #eee;
+    border-radius: 10px;
+    float: right;
+    max-width: 90%;
+}
+
+#chat-body {
+    display: none;
+}
+
+#chat-message {
+    padding: 3px;
+}
+
+#chat-message input {
+    width: 270px;
+}
+
+#chat-message button {
+    width: 39px;
+    height: 39px;
+    background: #22ceb6;
+    color: #fff;
+    border: 1px solid #fff;
+    font-size: 23px;
+    line-height: 33px;
+    font-weight: bold;
+    border-radius: 17px;
+}
+
+#chat-close {
+    float: right;
+    display: none;
+}
+
+#chat-status {
+    float: left;
+    width: 10px;
+    height: 10px;
+    display: block;
+    background: red;
+    margin-right: 10px;
+    margin-top: 7px;
+    border-radius: 10px;
+}
+
+#chat-status.connected {
+    background: yellow;
+}

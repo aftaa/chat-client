@@ -1,0 +1,211 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Чат{% endblock %}
+
+{% block body %}
+    <div id="chat-wrapper">
+        <div id="chat-header">
+            <span id="chat-status"></span>
+            <span id="chat-close">[x]</span>
+            <div style="font-size:14px;line-height: 10px;margin-top:5px;">чат с оператором</div>
+        </div>
+        <div id="chat-body">
+            <div id="chat-messages">
+            </div>
+            <div id="chat-message">
+                <label>
+                    <input type="text" placeholder="Напишите и нажмите Enter">
+                </label>
+                <button>&gt;</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                let date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/";
+        }
+
+        function getCookie(name) {
+            let nameEQ = name + "=";
+            let ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        function eraseCookie(name) {
+            document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        }
+
+        {% if autoChatOpen %}
+        let autoOpenChat = getCookie('auto_open_chat');
+        if (!autoOpenChat || 'not_open_yet' === autoOpenChat) {
+            if ('visible' === getCookie('chat') || !chatIsClosed()) {
+                setCookie('auto_open_chat', 'is_open', 365);
+            } else {
+                setCookie('auto_open_chat', 'not_open_yet', 365);
+                setTimeout(function () {
+                    if (chatIsClosed()) {
+                        showChat();
+                    }
+                }, 15000);
+            }
+        }
+        console.log(autoOpenChat);
+        {% endif %}
+
+        function scrollToBottom() {
+            let chatMessages = document.getElementById("chat-messages");
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        if ('visible' === getCookie('chat')) {
+            $('#chat-body, #chat-close').show();
+            scrollToBottom();
+        }
+
+        function chatIsClosed() {
+            return 'none' === $('#chat-body').css('display');
+        }
+
+        function showChat() {
+            setCookie('auto_open_chat', 'is_open', 365);
+            setCookie('chat', 'visible', 365);
+            $('#chat-body, #chat-close').slideToggle();
+            scrollToBottom();
+        }
+
+        $('#chat-header').on('click', function () {
+            $('#chat-body').slideToggle(function () {
+                if (chatIsClosed()) {
+                    setCookie('chat', 'hidden', 365);
+                } else {
+                    setCookie('chat', 'visible', 365);
+                    scrollToBottom();
+                }
+            });
+            $('#chat-close').toggle();
+        });
+
+        // for mobile browser
+        if (window.innerWidth < 600) {
+            $('#chat-message input').prop('placeholder', '');
+        }
+
+        var socket;
+        var connected = false;
+        const session = '{{ session }}';
+
+        function connect() {
+            {% if local %}
+            socket = new WebSocket("ws://localhost:3001/?session=" + session);
+            {% else %}
+            //socket = new WebSocket("wss://xn--e1aybc.xn--24-6kchemaby3a4d4erbe.xn--p1ai:3002/?session=" + session);
+            {% endif %}
+
+            // console.log('session=', session);
+
+            socket.addEventListener("open", function () {
+                connected = true;
+                $('#chat-status').addClass('connected');
+                $('#chat-messages').html('');
+                const command = {
+                    command: 'get_history',
+                    session: session
+                };
+                socket.send(JSON.stringify(command));
+            });
+
+            socket.addEventListener("message", function (e) {
+                // console.log(e.data);
+                try {
+                    let message = JSON.parse(e.data);
+                    switch (message.command) {
+                        case 'new_message':
+                            addMessage(message.name, message.message, message.isOperator);
+                            break;
+                        case 'open_chat':
+                            console.log(message.command)
+                            if (chatIsClosed()) {
+                                showChat();
+                                setCookie('chat', 'visible', 365);
+                            }
+                            break;
+                    }
+                } catch (e) {
+                    console.log(e);
+                }
+            });
+
+            socket.addEventListener("close", function (e) {
+                connected = false;
+                $('#chat-status').removeClass('connected');
+            });
+
+            socket.addEventListener("error", function (e) {
+                connected = false;
+                //$('#chat-status').removeClass('connected');
+            });
+        }
+
+        connect();
+
+        setInterval(function () {
+            if (!connected) {
+                console.log('Trying to connect to server');
+                connect();
+            }
+        }, 10000);
+
+
+        function addMessage(name, message, isOperator) {
+            let classes = "chat-message";
+            if (isOperator) {
+                classes += " chat-operator";
+            } else {
+                classes += " chat-client";
+            }
+            $('#chat-messages').append('<div class="' + classes + '">'
+                // + '<b>' + name + '</b>: '
+                + message + '</div>');
+            scrollToBottom();
+        }
+
+        function send_message() {
+            if (!$.trim($('#chat-message input').val()).length) {
+                return;
+            }
+            if (!connected) {
+                return;
+            }
+            const message = {
+                command: 'add_message',
+                session: session,
+                name: 'Вы',
+                message: $('#chat-message input').val()
+            };
+            $('#chat-message input').val('');
+            socket.send(JSON.stringify(message));
+        }
+
+        $('#chat-message button').on("click", function () {
+            send_message();
+        });
+
+        $('#chat-message input').on('keypress', function (event) {
+            if (13 === event.keyCode) {
+                send_message();
+            }
+        });
+    </script>
+{% endblock %}
