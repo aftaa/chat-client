@@ -16,7 +16,7 @@ class IndexController extends AbstractController
         $time = date('H:i');
         return $this->render('index/index.html.twig', [
             'autoChatOpen' => $time >= '09:00' && $time < '21:00',
-            'local' => 'chat-client' === $request->server->get('SERVER_NAME'),
+            'local' => 'chat' === $request->server->get('SERVER_NAME'),
             'session' => session_id(),
         ]);
     }

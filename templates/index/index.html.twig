@@ -120,7 +120,7 @@
                 $('#chat-status').addClass('connected');
                 $('#chat-messages').html('');
                 const command = {
-                    command: 'get_history',
+                    command: 'client_get_chat',
                     session: session
                 };
                 socket.send(JSON.stringify(command));
@@ -131,8 +131,9 @@
                 try {
                     let message = JSON.parse(e.data);
                     switch (message.command) {
-                        case 'new_message':
-                            addMessage(message.name, message.message, message.isOperator);
+                        case 'operator_get_chat':
+                        case 'client_get_chat':
+                            addMessage(message.content.name, message.content.message, message.content.isOperator);
                             break;
                         case 'open_chat':
                             console.log(message.command)
@@ -189,7 +190,7 @@
                 return;
             }
             const message = {
-                command: 'add_message',
+                command: 'client_add_message',
                 session: session,
                 name: 'Вы',
                 message: $('#chat-message input').val()
